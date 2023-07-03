@@ -72,8 +72,8 @@ products = {
         "description": "一款功能強大並具有先進照相功能的智慧手機",
         "price": 899.99
     },
-    "MobiTech 行動盔甲": {
-        "name": "MobiTech 行動電源",
+    "MobiTech 行動充電王": {
+        "name": "MobiTech 行動充電王",
         "category": "手機和配件",
         "brand": "MobiTech",
         "model_number": "MT-PC20",
@@ -207,7 +207,7 @@ products = {
         "price": 399.99
     },
     "ProGamer 賽車方向盤": {
-        "name": "ProGamer R方向盤",
+        "name": "ProGamer 賽車方向盤",
         "category": "遊戲機和配件",
         "brand": "ProGamer",
         "model_number": "PG-RW200",
