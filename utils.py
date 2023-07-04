@@ -342,13 +342,14 @@ products = {
     }
 }
 
-def get_completion_from_messages(messages, model="gpt-3.5-turbo", temperature=0, max_tokens=500):
+def get_completion_from_messages(messages, model="gpt-3.5-turbo-16k", temperature=0, max_tokens=15000):
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
         temperature=temperature, 
         max_tokens=max_tokens, 
     )
+
     return response.choices[0].message["content"]
 
 def get_products_and_category():
@@ -500,3 +501,94 @@ def find_category_and_product_only(user_input,products_and_category):
     {'role':'user', 'content': f"{delimiter}{user_input}{delimiter}"},  
     ] 
     return get_completion_from_messages(messages)
+
+
+def get_products_from_query(user_msg):
+    """
+    Code from L5, used in L8
+    """
+    products_and_category = get_products_and_category()
+    delimiter = "####"
+    system_message = f"""
+    您將會收到客戶服務的查詢。
+    該客戶服務查詢將以 {delimiter} 字符進行分隔。
+    請輸出一個 Python 列表，其中每個物件都是一個 JSON 物件，每個物件具有以下格式：
+    'category': <以下其中一種：電腦和筆記本，智慧手機和配件，電視和家庭影院系統，遊戲機和配件，音響設備，相機和攝像機>
+    和
+    'products': <必須在下面允許的產品中找到的產品列表內>
+
+    類別和產品必須在客戶服務查詢中找到。
+    如果提到了產品，它必須與下面允許的產品列表中的正確類別相關聯。
+    如果找不到產品或類別，則輸出一個空列表。
+
+    根據產品名稱和產品類別與客戶服務查詢的相關程度，列出所有相關的產品。
+    不要從產品的名稱推測任何特性或屬性，如相對品質或價格。
+
+    允許的產品以 JSON 格式提供。
+    每個項目的鍵代表類別。
+    每個項目的值是該類別中的產品列表。
+    允許的產品：{products_and_category}
+    
+    """
+    
+    messages =  [  
+    {'role':'system', 'content': system_message},    
+    {'role':'user', 'content': f"{delimiter}{user_msg}{delimiter}"},  
+    ] 
+    category_and_product_response = get_completion_from_messages(messages)
+    
+    return category_and_product_response
+
+
+def get_mentioned_product_info(data_list):
+    """
+    Used in L5 and L6
+    """
+    product_info_l = []
+
+    if data_list is None:
+        return product_info_l
+
+    for data in data_list:
+        try:
+            if "products" in data:
+                products_list = data["products"]
+                for product_name in products_list:
+                    product = get_product_by_name(product_name)
+                    if product:
+                        product_info_l.append(product)
+                    else:
+                        print(f"Error: Product '{product_name}' not found")
+            elif "category" in data:
+                category_name = data["category"]
+                category_products = get_products_by_category(category_name)
+                for product in category_products:
+                    product_info_l.append(product)
+            else:
+                print("錯誤： 非法的物件格式")
+        except Exception as e:
+            print(f"錯誤: {e}")
+
+    return product_info_l
+
+
+def answer_user_msg(user_msg,product_info):
+    """
+    Code from L5, used in L6
+    """
+    delimiter = "####"
+    system_message = f"""
+    您是一家大型3C賣場的客服助理。 \
+    請以親切且樂於助人的態度回答問題，\
+    並確保您的答案簡潔明瞭。\
+    也要記得向用戶提出相關的追問。
+    """
+    # user_msg = f"""
+    # tell me about the smartx pro phone and the fotosnap camera, the dslr one. Also what tell me about your tvs"""
+    messages =  [  
+    {'role':'system', 'content': system_message},   
+    {'role':'user', 'content': f"{delimiter}{user_msg}{delimiter}"},  
+    {'role':'assistant', 'content': f"Relevant product information:\n{product_info}"},   
+    ] 
+    response = get_completion_from_messages(messages)
+    return response
